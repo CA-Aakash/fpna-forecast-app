@@ -150,3 +150,4 @@ if uploaded_file:
         st.error(f"❌ Error processing file: {e}")
 else:
     st.info("Please upload an Excel file with columns: Scenario, Product, Region, Year, Units Sold, Price per Unit, FX Rate, COGS %, Operating Expenses. Optional: Depreciation, Tax Rate")
+`
