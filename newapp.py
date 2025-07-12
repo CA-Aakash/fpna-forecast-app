@@ -18,7 +18,7 @@ def calculate_forecast_from_row(row):
     gross_margin = revenue_local - cogs
     ebitda = gross_margin - row['Operating Expenses'] + row.get('Depreciation', 0)
     operating_profit = ebitda - row.get('Depreciation', 0)
-    tax = operating_profit * row.get('Tax Rate', 0.25)  # default 25% tax rate
+    tax = operating_profit * row.get('Tax Rate', 0.25)
     net_income = operating_profit - tax
 
     gross_margin_pct = gross_margin / revenue_local if revenue_local else 0
@@ -35,8 +35,6 @@ def calculate_forecast_from_row(row):
         'Revenue (Local)': revenue_local,
         'Revenue (Group)': revenue_group,
         'COGS': cogs,
-        'Operating Expenses': row['Operating Expenses'],  # <-- Add this
-        'Depreciation': row.get('Depreciation', 0),       # <-- Add this
         'Gross Margin': gross_margin,
         'Gross Margin %': gross_margin_pct * 100,
         'EBITDA': ebitda,
@@ -45,13 +43,17 @@ def calculate_forecast_from_row(row):
         'Tax': tax,
         'Net Income': net_income,
         'Net Margin %': net_margin_pct * 100,
-        'Cash Flow': cash_flow
+        'Cash Flow': cash_flow,
+        'Operating Expenses': row['Operating Expenses'],
+        'Depreciation': row['Depreciation']
     }
 
 if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file)
-        df.columns = df.columns.str.strip() 
+        df.columns = df.columns.str.strip()  # Remove hidden spaces
+
+        # Add missing optional columns if needed
         if 'Tax Rate' not in df.columns:
             df['Tax Rate'] = 0.25
         if 'Depreciation' not in df.columns:
@@ -72,8 +74,8 @@ if uploaded_file:
 
         forecast_results = [calculate_forecast_from_row(row) for _, row in df.iterrows()]
         results_df = pd.DataFrame(forecast_results)
+        results_df.columns = results_df.columns.str.strip()
 
-        # Filters
         st.sidebar.title("Scenario & Filter Options")
         scenario_selected = st.sidebar.selectbox("Choose a Scenario", sorted(results_df['Scenario'].unique()))
         region_selected = st.sidebar.multiselect("Filter by Region", sorted(results_df['Region'].unique()), default=sorted(results_df['Region'].unique()))
@@ -85,7 +87,15 @@ if uploaded_file:
             (results_df['Year'].isin(year_selected))
         ]
 
-        # Revenue by Product Bar and Pie Charts
+        # Ensure required columns exist for aggregation
+        for col in ['Revenue (Group)', 'COGS', 'Operating Expenses', 'Depreciation', 'Tax']:
+            if col not in filtered_df.columns:
+                filtered_df[col] = 0
+
+        agg = filtered_df[['Revenue (Group)', 'COGS', 'Operating Expenses', 'Depreciation', 'Tax']].sum()
+        operating_profit = agg['Revenue (Group)'] - agg['COGS'] - agg['Operating Expenses']
+        net_income = operating_profit - agg['Tax']
+
         st.subheader(f"📊 Revenue by Product - {scenario_selected} Scenario")
         fig_bar = go.Figure()
         fig_bar.add_trace(go.Bar(x=filtered_df['Product'], y=filtered_df['Revenue (Group)'], name='Revenue (Group)', marker_color='indigo'))
@@ -97,7 +107,6 @@ if uploaded_file:
         fig_pie.update_layout(title="Revenue Split by Product", template="plotly_white")
         st.plotly_chart(fig_pie, use_container_width=True)
 
-        # Net Income and Cash Flow by Region
         st.subheader(f"💰 Net Income and Cash Flow by Region - {scenario_selected} Scenario")
         region_grouped = filtered_df.groupby('Region').agg({'Net Income': 'sum', 'Cash Flow': 'sum'}).reset_index()
         fig_region = go.Figure()
@@ -106,24 +115,17 @@ if uploaded_file:
         fig_region.update_layout(barmode='group', title="Net Income and Cash Flow by Region", template="plotly_white")
         st.plotly_chart(fig_region, use_container_width=True)
 
-        # Waterfall chart for Revenue → Net Income
         st.subheader("📉 Revenue to Net Income Walk (Waterfall Chart)")
-        agg = filtered_df[['Revenue (Group)', 'COGS', 'Operating Expenses', 'Depreciation', 'Tax']].sum()
-        operating_profit = agg['Revenue (Group)'] - agg['COGS'] - agg['Operating Expenses']
-        net_income = operating_profit - agg['Tax']
-
         waterfall_fig = go.Figure(go.Waterfall(
             name = "20", orientation = "v",
             measure = ["absolute", "relative", "relative", "relative", "relative", "total"],
             x = ["Revenue", "-COGS", "-Opex", "-Depreciation", "-Tax", "Net Income"],
-            textposition = "outside",
             y = [agg['Revenue (Group)'], -agg['COGS'], -agg['Operating Expenses'], -agg['Depreciation'], -agg['Tax'], net_income],
             connector = {"line": {"color": "rgb(63, 63, 63)"}}
         ))
         waterfall_fig.update_layout(title="Waterfall Chart: Revenue to Net Income", template="plotly_white")
         st.plotly_chart(waterfall_fig, use_container_width=True)
 
-        # Table display
         st.subheader("📋 Forecast Details by Product")
         display_df = filtered_df.set_index('Product').copy()
         for col in display_df.columns:
