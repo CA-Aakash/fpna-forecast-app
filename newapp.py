@@ -96,10 +96,21 @@ if uploaded_file:
         operating_profit = agg['Revenue (Group)'] - agg['COGS'] - agg['Operating Expenses']
         net_income = operating_profit - agg['Tax']
 
-        st.subheader(f"📊 Revenue by Product - {scenario_selected} Scenario")
+        st.subheader(f"📊 Revenue by Product and Region - {scenario_selected} Scenario")
         fig_bar = go.Figure()
-        fig_bar.add_trace(go.Bar(x=filtered_df['Product'], y=filtered_df['Revenue (Group)'], name='Revenue (Group)', marker_color='indigo'))
-        fig_bar.update_layout(title="Revenue by Product (Group Currency)", yaxis_title="Amount", template="plotly_white")
+        for region in filtered_df['Region'].unique():
+            region_df = filtered_df[filtered_df['Region'] == region].groupby('Product')['Revenue (Group)'].sum().reset_index()
+            fig_bar.add_trace(go.Bar(
+                x=region_df['Product'],
+                y=region_df['Revenue (Group)'],
+                name=region
+            ))
+        fig_bar.update_layout(
+            barmode='stack',
+            title="Revenue by Product (Stacked by Region)",
+            yaxis_title="Amount",
+            template="plotly_white"
+        )
         st.plotly_chart(fig_bar, use_container_width=True)
 
         st.subheader(f"🧁 Revenue Split by Product - {scenario_selected} Scenario")
