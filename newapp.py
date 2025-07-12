@@ -35,6 +35,8 @@ def calculate_forecast_from_row(row):
         'Revenue (Local)': revenue_local,
         'Revenue (Group)': revenue_group,
         'COGS': cogs,
+        'Operating Expenses': row['Operating Expenses'],  # <-- Add this
+        'Depreciation': row.get('Depreciation', 0),       # <-- Add this
         'Gross Margin': gross_margin,
         'Gross Margin %': gross_margin_pct * 100,
         'EBITDA': ebitda,
