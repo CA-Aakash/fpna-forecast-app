@@ -87,7 +87,6 @@ if uploaded_file:
             (results_df['Year'].isin(year_selected))
         ]
 
-        # Ensure required columns exist for aggregation
         for col in ['Revenue (Group)', 'COGS', 'Operating Expenses', 'Depreciation', 'Tax']:
             if col not in filtered_df.columns:
                 filtered_df[col] = 0
@@ -100,17 +99,8 @@ if uploaded_file:
         fig_bar = go.Figure()
         for region in filtered_df['Region'].unique():
             region_df = filtered_df[filtered_df['Region'] == region].groupby('Product')['Revenue (Group)'].sum().reset_index()
-            fig_bar.add_trace(go.Bar(
-                x=region_df['Product'],
-                y=region_df['Revenue (Group)'],
-                name=region
-            ))
-        fig_bar.update_layout(
-            barmode='stack',
-            title="Revenue by Product (Stacked by Region)",
-            yaxis_title="Amount",
-            template="plotly_white"
-        )
+            fig_bar.add_trace(go.Bar(x=region_df['Product'], y=region_df['Revenue (Group)'], name=region))
+        fig_bar.update_layout(barmode='stack', title="Revenue by Product (Stacked by Region)", yaxis_title="Amount", template="plotly_white")
         st.plotly_chart(fig_bar, use_container_width=True)
 
         st.subheader(f"🧁 Revenue Split by Product - {scenario_selected} Scenario")
@@ -128,11 +118,11 @@ if uploaded_file:
 
         st.subheader("📉 Revenue to Net Income Walk (Waterfall Chart)")
         waterfall_fig = go.Figure(go.Waterfall(
-            name = "20", orientation = "v",
-            measure = ["absolute", "relative", "relative", "relative", "relative", "total"],
-            x = ["Revenue", "-COGS", "-Opex", "-Depreciation", "-Tax", "Net Income"],
-            y = [agg['Revenue (Group)'], -agg['COGS'], -agg['Operating Expenses'], -agg['Depreciation'], -agg['Tax'], net_income],
-            connector = {"line": {"color": "rgb(63, 63, 63)"}}
+            name="20", orientation="v",
+            measure=["absolute", "relative", "relative", "relative", "relative", "total"],
+            x=["Revenue", "-COGS", "-Opex", "-Depreciation", "-Tax", "Net Income"],
+            y=[agg['Revenue (Group)'], -agg['COGS'], -agg['Operating Expenses'], -agg['Depreciation'], -agg['Tax'], net_income],
+            connector={"line": {"color": "rgb(63, 63, 63)"}}
         ))
         waterfall_fig.update_layout(title="Waterfall Chart: Revenue to Net Income", template="plotly_white")
         st.plotly_chart(waterfall_fig, use_container_width=True)
@@ -147,8 +137,10 @@ if uploaded_file:
         st.dataframe(display_df)
 
         st.subheader("📎 Margin Summary")
-        margin_summary = display_df[['Gross Margin %', 'Operating Margin %', 'Net Margin %']]
-        st.dataframe(margin_summary)
+        margin_summary = filtered_df.groupby('Product')[['Gross Margin %', 'Operating Margin %', 'Net Margin %']].mean().reset_index()
+        for col in ['Gross Margin %', 'Operating Margin %', 'Net Margin %']:
+            margin_summary[col] = margin_summary[col].map('{:.1f}%'.format)
+        st.dataframe(margin_summary, use_container_width=True)
 
         def convert_df_to_excel(df):
             output = BytesIO()
@@ -157,10 +149,7 @@ if uploaded_file:
             return output.getvalue()
 
         excel_download = convert_df_to_excel(results_df)
-        st.download_button(label="📥 Download Results as Excel",
-                           data=excel_download,
-                           file_name='forecast_results_by_product.xlsx',
-                           mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        st.download_button(label="📥 Download Results as Excel", data=excel_download, file_name='forecast_results_by_product.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     except Exception as e:
         st.error(f"❌ Error processing file: {e}")
