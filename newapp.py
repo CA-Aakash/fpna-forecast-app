@@ -51,6 +51,7 @@ def calculate_forecast_from_row(row):
 if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file)
+        df.columns = df.columns.str.strip() 
         if 'Tax Rate' not in df.columns:
             df['Tax Rate'] = 0.25
         if 'Depreciation' not in df.columns:
