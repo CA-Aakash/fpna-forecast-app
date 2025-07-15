@@ -3,6 +3,23 @@ import pandas as pd
 import plotly.graph_objects as go
 from io import BytesIO
 
+def get_sample_template():
+    data = {
+        'Scenario': ['Budget', 'Actual', 'Best', 'Worst'],
+        'Product': ['Product A', 'Product B', 'Product C', 'Product D'],
+        'Region': ['Asia', 'Europe', 'North America', 'South America'],
+        'Year': [2024, 2024, 2024, 2024],
+        'Units Sold': [1000, 1200, 800, 700],
+        'Price per Unit': [25, 27, 20, 22],
+        'FX Rate': [1.0, 1.1, 0.9, 1.2],
+        'COGS %': [0.60, 0.65, 0.62, 0.66],
+        'Operating Expenses': [20000, 22000, 18000, 17000],
+        'Depreciation': [2500, 2600, 2400, 2200],
+        'Tax Rate': [0.25, 0.25, 0.25, 0.25],
+    }
+    return pd.DataFrame(data)
+
+
 st.set_page_config(page_title="Driver-Based Financial Forecasting", layout="wide")
 
 st.title("📈 Driver-Based Financial Forecasting Tool")
@@ -11,14 +28,20 @@ st.markdown(
 )
 
 # ---- Download Sample Template Button ----
-st.markdown("#### 📋 Need a template? Download the sample Excel file below:")
-with open("driver_forecast_template.xlsx", "rb") as f:
-    st.download_button(
-        label="📥 Download Sample Template",
-        data=f,
-        file_name="driver_forecast_template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+st.markdown("📋 **Need a template? Download the sample Excel file below:**")
+sample_df = get_sample_template()
+excel_io = BytesIO()
+with pd.ExcelWriter(excel_io) as writer:
+    sample_df.to_excel(writer, index=False)
+excel_io.seek(0)
+
+st.download_button(
+    label="📥 Download Sample Excel Template",
+    data=excel_io,
+    file_name="driver_forecast_template.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
 
 st.markdown("---")
 
