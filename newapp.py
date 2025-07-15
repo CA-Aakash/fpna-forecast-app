@@ -6,7 +6,21 @@ from io import BytesIO
 st.set_page_config(page_title="Driver-Based Financial Forecasting", layout="wide")
 
 st.title("📈 Driver-Based Financial Forecasting Tool")
-st.markdown("Upload an Excel file with assumptions for Base, Best, and Worst scenarios, including Product, Region, and Year breakdown. You can also override key assumptions manually.")
+st.markdown(
+    "Upload an Excel file with assumptions for Base, Best, and Worst scenarios, including Product, Region, and Year breakdown. You can also override key assumptions manually."
+)
+
+# ---- Download Sample Template Button ----
+st.markdown("#### 📋 Need a template? Download the sample Excel file below:")
+with open("driver_forecast_template.xlsx", "rb") as f:
+    st.download_button(
+        label="📥 Download Sample Template",
+        data=f,
+        file_name="driver_forecast_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+st.markdown("---")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
