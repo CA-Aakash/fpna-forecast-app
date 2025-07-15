@@ -5,7 +5,7 @@ from io import BytesIO
 
 def get_sample_template():
     data = {
-        'Scenario': ['Budget', 'Actual', 'Best', 'Worst'],
+        'Scenario': ['Base', 'Base', 'Best', 'Worst'],
         'Product': ['Product A', 'Product B', 'Product C', 'Product D'],
         'Region': ['Asia', 'Europe', 'North America', 'South America'],
         'Year': [2024, 2024, 2024, 2024],
